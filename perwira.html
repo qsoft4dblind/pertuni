@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <style>
+        /* Basic Reset */
+        body, h1, h2, h3, h4, h5, h6, p {
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        /* Logo Styling */
+        .img-center {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Form and Input Styles */
+        input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 80%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Flexbox layout for larger screens */
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Detail Section Styling */
+        #detail {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        #detail p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .img-center {
+                width: 60%;
+                max-width: 300px;
+                top: 5px;
+                left: 5px;
+            }
+
+            button {
+                width: 100%;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .img-center {
+                width: 50%;
+            }
+
+            header h1 {
+                font-size: 1.2rem;
+            }
+
+            #detail {
+                padding: 15px;
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            #output {
+                font-size: 0.9rem;
+            }
+
+            button {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Tampilkan alamat email pengguna -->
+    <div id="userEmail"></div>
+    
+    <img class="img-center" src="pertuni.jpg" alt="logo Pertuni Wirausaha" width="700px">
+    <header>
+        <h1>Aplikasi Pertuni Wirausaha</h1>
+    </header>
+
+    <!-- Formulir Pencarian -->
+    <label>Pilih Kategori:</label>
+    <div>
+        <label>
+            <input type="checkbox" name="category" value="Kategori"> Kategori
+        </label>
+        <label>
+            <input type="checkbox" name="category" value="nama produk"> Nama Produk
+        </label>
+    </div>
+    
+    <input type="text" id="searchInput" placeholder="Masukkan kata kunci pencarian">
+    <button onclick="search()">Cari</button>
+        <div id="output"></div>
+
+    <div id="keterangan"></div>
+
+<div id="detail">
+    <div id="selectedImage"></div> <!-- Tempat gambar yang dipilih -->
+    <div id="imageOptions"></div> <!-- Tempat gambar yang akan ditampilkan -->
+    <!-- Tambahkan elemen untuk menampilkan total harga -->
+    <p>Total Harga: <span id="detailTotalHarga"></span></p>
+</div>
+    <!-- Keterangan Jumlah -->
+    <div id="jumlahKeterangan"></div>
+
+    <!-- Jumlah Pesanan Control -->
+    <button onclick="increaseQuantity()">Tambah Jumlah Pesanan</button>
+    <button onclick="decreaseQuantity()">Kurangi Jumlah Pesanan</button>
+    <button onclick="previousData()">Sebelumnya</button>
+    <button onclick="nextData()">Selanjutnya</button>
+
+    <!-- Tombol Beli -->
+    <button id="buyButton" onclick="showBuyForm()">Beli</button>
+
+    <div id="displayData"></div>
+    <img id="uploadedImage" alt="Uploaded Image" style="width: 100%;">
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        
+        // Get a reference to the database service
+        const database = firebase.database();            
+var url = 'https://script.google.com/macros/s/AKfycbyyibCz-qB-adNtNPZ5dsMzAICniWiv6cENmlmHVhMVFkIBd8epd6KyIYSNxABXlygOtw/exec';
+        var searchData = [];
+        var currentIndex = 0;
+        var data;
+        var jumlahPesanan = 1;
+        var selectedImageURL = '';
+
+        function previousData() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showData();
+            }
+        }
+
+        function nextData() {
+            if (currentIndex < searchData.length - 1) {
+                currentIndex++;
+                showData();
+            }
+        }
+
+        function search() {
+        // Mengambil kategori yang dipilih
+        var checkboxes = document.querySelectorAll('input[name="category"]:checked');
+        var selectedCategories = Array.from(checkboxes).map(checkbox => checkbox.value);
+        var searchInput = document.getElementById('searchInput').value.toLowerCase();
+
+        if (selectedCategories.length === 0) {
+            alert('Silakan pilih setidaknya satu kategori');
+            return;
+        }
+
+        // Filter data berdasarkan kategori yang dipilih
+        searchData = data.filter(item => {
+            // Memeriksa apakah item memiliki nilai yang cocok dalam salah satu kategori yang dipilih
+            return selectedCategories.some(category => item[category]?.toLowerCase().includes(searchInput));
+        });
+
+        currentIndex = 0;
+        showData();
+    }
+        
+    function showData() {
+    var dataItem = searchData[currentIndex];
+
+    if (dataItem) {
+        var harga = dataItem.Harga;
+        var diskon = dataItem.diskon;
+        var totalHarga = calculateTotalHarga(harga, diskon);
+
+        // Mendapatkan array gambar produk
+        var gambarProdukArray = dataItem['gambar produk'].split(','); // Memisahkan URL gambar menjadi array
+
+        // Menampilkan semua gambar produk
+        var imagesHTML = '';
+        for (var i = 0; i < gambarProdukArray.length; i++) {
+            var imageURL = gambarProdukArray[i].trim(); // Membersihkan URL gambar dari spasi ekstra
+
+            // Membuat label nama otomatis berdasarkan nama produk dan nomor gambar
+            var labelName = dataItem['nama produk'] + ' - Gambar ' + (i + 1);
+
+            imagesHTML += `<label>
+                    <input type="radio" name="selectedImage" value="${imageURL}" onchange="selectImage('${imageURL}')">
+                    <img src="${imageURL}" alt="${labelName}" style="width: 100%;">
+                    <span>${labelName}</span>
+                    <a href="${imageURL}" target="_blank">Buka Gambar</a>
+                </label>`;
+        }
+
+        document.getElementById('imageOptions').innerHTML = imagesHTML;
+        document.getElementById('imageOptions').style.display = 'block';
+
+        // Tampilkan total harga
+        document.getElementById('detailTotalHarga').textContent = totalHarga;
+
+        document.getElementById('output').innerHTML =
+            `
+<p>Nama produk: ${dataItem['nama produk']}</p>            
+            <p>Tanggal input: ${dataItem['Tanggal input']}</p>
+            <p>Kategori: ${dataItem.Kategori}</p>
+            <p>Kode Produk: ${dataItem['Kode produk']}</p>
+            ${dataItem.warna ? `<p>Warna: ${dataItem.warna}</p>` : ''}
+            ${dataItem['level pedas'] ? `<p>Rasa: ${dataItem['level pedas']}</p>` : ''}
+            <p>Deskripsi Produk: ${dataItem['deskripsi produk']}</p>
+            <p>Harga: ${harga}</p>
+            ${diskon ? `<p>Diskon: ${diskon}</p>` : ''}
+            <p>Jumlah Pesanan: ${jumlahPesanan}</p>
+            <p>Total Harga: ${totalHarga}</p>
+            <p>Untuk melakukan pembelian produk,silahkan transfer ke nomor rekening dibawah ini:</p>                    
+    <p>Bank: ${dataItem['Bank']}</p>
+    <p>Nomor Rekening: ${dataItem['Nomor Rekening']}</p>
+    <p>Atas Nama: ${dataItem['Nama']}</p>                                
+<p>Atau Anda juga bisa transfer ke Nomor ini</p><br>
+${dataItem['Gopay'] ? `<p>Gopay: ${dataItem['Gopay']}</p>` : ''}
+${dataItem['Dana'] ? `<p>Dana: ${dataItem['Dana']}</p>` : ''}
+
+`;
+        document.getElementById('keterangan').innerHTML = 'Data ditemukan';
+        document.getElementById('jumlahKeterangan').innerHTML = `Keterangan Jumlah: ${currentIndex + 1} of ${searchData.length} pencarian yang ditemukan`;
+
+        // fungsi untuk mengambil data pengguna di firebase dan diisi otomatis pada form pemeblian
+        const namaInput = document.getElementById("nama");
+        const alamatInput = document.getElementById("alamat");
+        const nomorTeleponInput = document.getElementById("nomor_telepon");
+        const emailInput = document.getElementById("email");
+
+        // Function to fetch user data based on the current logged-in user's email
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                const userEmail = user.email;
+                const userRef = firebase.database().ref('pertuni/perpustakaan/melihat/awas').orderByChild('email').equalTo(userEmail);
+                
+                userRef.once('value', snapshot => {
+                    if (snapshot.exists()) {
+                        const userData = snapshot.val();
+                        const userKey = Object.keys(userData)[0];
+                        const userDetails = userData[userKey];
+
+                        // Populate the form with data from Firebase
+                        namaInput.value = userDetails.nama;
+                        alamatInput.value = userDetails.alamat;
+                        nomorTeleponInput.value = userDetails.nomor_telepon;
+                        emailInput.value = userDetails.email;
+                    }
+                });
+            } else {
+                // If no user is logged in, redirect to login page or show a message
+                alert("Please log in to access this page.");
+                window.location.href = "login.html";  // Change to your login page URL
+            }
+        });
+                    
+        // Mengisi formulir pembelian dengan data produk
+        document.getElementById('productName').value = dataItem['nama produk'];
+        document.getElementById('productCode').value = dataItem['Kode produk'];
+        document.getElementById('productColor').value = dataItem.warna || '';
+        document.getElementById('spicinessLevel').value = dataItem['level pedas'] || '';
+        document.getElementById('quantity').value = jumlahPesanan;
+        document.getElementById('totalPrice').value = totalHarga;
+
+        // Menjadikan input nama produk, kode produk, warna produk, dan level pedas menjadi readonly
+        document.getElementById('productName').readOnly = true;
+        document.getElementById('productCode').readOnly = true;
+        document.getElementById('productColor').readOnly = true;
+        document.getElementById('spicinessLevel').readOnly = true;
+
+        // Memeriksa apakah form warna produk dan form level pedas kosong
+        if (!dataItem.warna) {
+            document.getElementById('colorForm').style.display = 'none';
+        } else {
+            document.getElementById('colorForm').style.display = 'block';
+        }
+
+        if (!dataItem['level pedas']) {
+            document.getElementById('spicinessForm').style.display = 'none';
+        } else {
+            document.getElementById('spicinessForm').style.display = 'block';
+        }
+
+    } else {
+        document.getElementById('output').innerHTML = '';
+        document.getElementById('keterangan').innerHTML = 'Data tidak ditemukan';
+        document.getElementById('jumlahKeterangan').innerHTML = '';
+    }
+
+    showDetail();
+}
+
+        function calculateTotalHarga(harga, diskon) {
+            return (jumlahPesanan * harga) - diskon;
+        }
+
+        function showDetail() {
+            // Tampilkan gambar produk yang dipilih
+            document.getElementById('selectedImage').innerHTML = selectedImageURL ? `<img src="${selectedImageURL}" alt="Gambar Produk">` : '';
+        }
+
+        function increaseQuantity() {
+            jumlahPesanan++;
+            showData();
+        }
+
+        function decreaseQuantity() {
+            if (jumlahPesanan > 1) {
+                jumlahPesanan--;
+                showData();
+            }
+        }
+
+        function selectImage(imageURL) {
+            selectedImageURL = imageURL;
+            showDetail(); // Update tampilan detail setelah memilih gambar
+        }
+
+        function getFileIDFromURL(url) {
+            // Mendapatkan ID file dari URL Google Drive
+            var match = url.match(/\/d\/([a-zA-Z0-9_-]+)|\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            return match ? match[1] || match[2] : null;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+    fetch(url)
+        .then(response => response.json())
+        .then(dataResponse => {
+            data = dataResponse;
+            searchData = data; // Mengatur semua data sebagai hasil pencarian awal
+            showData(); // Memanggil fungsi untuk langsung menampilkan data
+        })
+        .catch(error => console.error('Error fetching data:', error));
+});
+
+// Fungsi untuk otomatis menambahkan kode negara pada nomor telepon
+        function autoAddCountryCode() {
+            var nomorTeleponInput = document.getElementById('nomor_telepon');
+            if (nomorTeleponInput.value.length > 0 && nomorTeleponInput.value[0] !== '+') {
+                nomorTeleponInput.value = '+62' + nomorTeleponInput.value;
+            }
+        }
+
+  // Fungsi untuk mengirimkan data formulir ke Firebase Realtime Database dan membuka WhatsApp
+  function uploadData() {
+    const form = document.getElementById('orderForm');
+    const formData = new FormData(form);
+
+    // Data formulir selain file
+    const nama = formData.get('nama');
+    const alamat = formData.get('alamat');
+    const nomor_telepon = formData.get('nomor_telepon');
+    const email = formData.get('email');
+    const notes = formData.get('notes');
+    const productName = formData.get('productName');
+    const productCode = formData.get('productCode');
+    const productColor = formData.get('productColor');
+    const spicinessLevel = formData.get('spicinessLevel');
+    const quantity = formData.get('quantity');
+    const totalPrice = formData.get('totalPrice');
+
+    // Menyimpan data ke Firebase Realtime Database
+    const ordersRef = firebase.database().ref('pertuni/perpustakaan/data/orders');
+    ordersRef.push({
+        nama: formData.get('nama'),
+                alamat: formData.get('alamat'),                
+                nomor_telepon: formData.get('nomor_telepon'),
+                email: formData.get('email'),
+                notes: formData.get('notes'),
+                productName: formData.get('productName'),
+                productCode: formData.get('productCode'),
+                productColor: formData.get('productColor'),
+                spicinessLevel: formData.get('spicinessLevel'),
+                quantity: formData.get('quantity'),
+                totalPrice: formData.get('totalPrice'),
+                selectedImageURL: selectedImageURL,
+
+                // Menambahkan waktu pengiriman formulir
+                deliveryTime: new Date().toString(),
+    }).then(() => {
+      console.log('Data berhasil disimpan di Realtime Database.');
+      // Setelah data terkirim, reset formulir
+      resetForm();
+      // Setelah data terkirim, buat pesan WhatsApp
+      sendWhatsAppMessage(formData);
+    }).catch((error) => {
+      console.error('Gagal menyimpan data di Realtime Database: ', error);
+    });
+  }
+
+  // Fungsi untuk mereset formulir setelah data terkirim
+  function resetForm() {
+    document.getElementById('orderForm').reset();
+    document.getElementById('selectedImage').innerHTML = ''; // Hapus URL gambar yang dipilih
+}
+
+// Menampilkan formulir pembelian
+function showBuyForm() {
+            document.getElementById('buyForm').style.display = 'block';
+        }
+
+  // Fungsi untuk mengirim pesan WhatsApp
+  function sendWhatsAppMessage(formData) {
+    var nama = formData.get('nama');
+    var alamat = formData.get('alamat');
+    var nomor_telepon = formData.get('nomor_telepon');
+    var email = formData.get('email');
+    var note = formData.get('notes');
+    var productName = formData.get('productName');
+    var productCode = formData.get('productCode');
+    var productColor = formData.get('productColor');
+    var spicinessLevel = formData.get('spicinessLevel');
+    var quantity = formData.get('quantity');
+    var totalPrice = formData.get('totalPrice');
+
+    // Validasi input
+    if (nama.length < 3) {
+      alert('Maaf, Silakan Input Nama Anda dengan benar!');
+      return;
+    }
+    if (nomor_telepon.length < 3) {
+      alert('Maaf, Silakan Input Nomor Telepon Anda dengan benar!');
+      return;
+    }
+
+    // Validasi email
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      alert('Mohon masukkan alamat email yang valid!');
+      return;
+    }
+    if (alamat.length < 3) {
+      alert('Maaf, Silakan Input Alamat Anda dengan benar!');
+      return;
+    }
+    if (note.length < 3) {
+        alert('Maaf,silahkan input Catatan dengan benar.contoh:pilihan warna produk,level pedas,dan pilihan gambar produk!.');
+    return;
+  }
+
+    // Menambahkan kode negara +62 pada nomor telepon jika belum ada
+    if (nomor_telepon.startsWith('08')) {
+      nomor_telepon = '+628' + nomor_telepon.substring(2);
+    }
+
+    // Nomor admin untuk WhatsApp
+    var adminPhoneNumber = '+6282185718020';  // Ganti dengan nomor admin yang benar
+
+    var whatsappMessage = `Halo Pertuni Jambi Store, saya ingin memesan:\n\n`;
+    whatsappMessage += `Nama: ${nama}\n`;
+    whatsappMessage += `Alamat: ${alamat}\n`;
+    whatsappMessage += `Nomor Telepon: ${nomor_telepon}\n`;
+    whatsappMessage += `Email: ${email}\n`;
+    whatsappMessage += `Catatan: ${note}\n\n`;
+    whatsappMessage += `Produk yang dipesan:\n`;
+    whatsappMessage += `Nama Produk: ${productName}\n`;
+    whatsappMessage += `Kode Produk: ${productCode}\n`;
+    if (productColor) whatsappMessage += `Warna: ${productColor}\n`;
+    if (spicinessLevel) whatsappMessage += `Rasa: ${spicinessLevel}\n`;
+    whatsappMessage += `Jumlah Pesanan: ${quantity}\n`;
+    whatsappMessage += `Total Harga: ${totalPrice}\n`;
+    whatsappMessage += `\nTerimakasih.`;
+
+    var encodedMessage = encodeURIComponent(whatsappMessage);
+    var whatsappLink = `https://wa.me/${adminPhoneNumber}?text=${encodedMessage}`;
+
+    window.open(whatsappLink, '_blank');
+    alert('Silahkan klik oke untuk mengirim pesan ke Admin Pertuni Jambi Store!');
+  }
+</script>
+<script>    
+    document.addEventListener("DOMContentLoaded", function() {
+      const inputs = document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea');
+    
+      inputs.forEach(input => {
+        input.addEventListener('mouseenter', function() {
+          input.style.color = 'blue';
+        });
+    
+        input.addEventListener('mouseleave', function() {
+          input.style.color = 'black'; // Ubah ke warna asal (misalnya hitam)
+        });
+      });
+    });
+    
+            // Fungsi untuk menampilkan email pengguna yang sedang login
+    function displayUserEmail() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    document.getElementById('userEmail').textContent = 'Email Anda: ' + user.email;
+                } else {
+                    window.location.href = 'login.html'; // Redirect ke halaman login jika belum login
+                }
+            });
+        }
+    
+        // Jalankan fungsi untuk menampilkan email pengguna saat halaman dimuat
+        window.onload = function() {
+            displayUserEmail();
+    
+            // Menampilkan data dari Firebase Realtime Database
+            ordersRef.on('value', function(snapshot) {
+                renderOrders(snapshot);
+            });
+        };
+    
+    </script>    
+        <!-- Formulir Beli -->
+        <div id="buyForm" style="display: none;">
+            <h2>Formulir Beli</h2>
+            <form id="orderForm">
+                <label for="nama">Nama:</label>
+                <input type="text" id="nama" name="nama" readonly><br>
+            
+                <label for="alamat">Alamat:</label>
+                <input type="text" id="alamat" name="alamat" readonly><br>
+            
+                <label for="nomor_telepon">Nomor Telepon</label>
+                <input type="text" id="nomor_telepon" name="nomor_telepon" readonly>
+    
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" readonly><br>
+                <label for="notes">Catatan:</label>
+                <textarea id="notes" name="notes" placeholder="Silahkan input Catatan dengan benar. Contoh: pilihan warna produk, level pedas, dan pilihan gambar produk"></textarea>
+                <br>
+                                <!-- Input tambahan untuk informasi produk yang dibeli -->
+    
+                <div id="productDetails">
+                    <h3 id="productDescription">Detail Produk:</h3>
+                    <br>
+    
+                    <label for="productName">Nama Produk:</label>
+                    <input type="text" id="productName" name="productName" required readonly>
+                    <br>
+    
+                    <label for="productCode">Kode Produk:</label>
+                    <input type="text" id="productCode" name="productCode" required readonly>
+                    <br>
+    
+                    <!-- Form warna produk -->
+                    <div id="colorForm">
+                        <label for="productColor">Warna Produk:</label>
+                        <input type="text" id="productColor" name="productColor" required readonly>
+                        <br>
+                    </div>
+    
+                    <!-- Form level pedas -->
+                    <div id="spicinessForm">
+                        <label for="spicinessLevel">Rasa:</label>
+                        <input type="text" id="spicinessLevel" name="spicinessLevel" readonly>
+                        <br>
+                    </div>
+    
+                    <label for="quantity">Jumlah Pesanan:</label>
+                    <input type="number" id="quantity" name="quantity" required readonly>
+                    <br>
+    
+                    <label for="totalPrice">Total Harga:</label>
+                    <input type="text" id="totalPrice" name="totalPrice" required readonly>
+                    <br>
+                </div>
+                <br>
+    
+        <button type="button" onclick="uploadData()">Kirim</button>
+  </form>
+</div>
+<button class="back-button" onclick="window.location.href='member perwira.html'">Kembali</button>
+
+</body>
+</html>
